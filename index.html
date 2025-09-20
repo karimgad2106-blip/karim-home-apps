@@ -1,7 +1,243 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hello Karim</title>
-<body style="font-family:system-ui;padding:20px;background:#0f0f12;color:#e9e9ee">
-  <h1>GitHub Pages läuft! ✅</h1>
-  <p>Später verlinken wir hier <a href="household.html" style="color:#7dd3fc">Household</a> & 
-  <a href="pot.html" style="color:#86efac">Task-Pot</a>.</p>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Julia & Karim — Householdgame</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0f12; --card:#17171c; --ink:#e9e9ee; --muted:#9aa0a6;
+    --ok:#86efac; --due:#ffd166; --over:#ff6b6b; --bar:#2a2b32;
+    --karim:#60a5fa; --julia:#f472b6;
+    --glowK: 0 0 10px #93c5fd, 0 0 18px #60a5fa, 0 0 28px #3b82f6;
+    --glowJ: 0 0 10px #f9a8d4, 0 0 18px #f472b6, 0 0 28px #ec4899;
+  }
+  *{box-sizing:border-box} body{margin:16px;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .card{background:var(--card);padding:16px;border-radius:12px;margin:12px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input,select,button{padding:10px;border-radius:10px;border:0;background:#202028;color:var(--ink)}
+  button{cursor:pointer}
+
+  /* Header */
+  .title-wrap{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px 0 18px}
+  .pixel-title{font-family:'Press Start 2P',system-ui,sans-serif;text-align:center;color:#f5f5f5;
+    text-shadow:0 0 6px #fff,0 0 14px #ff7bd8,0 0 26px #ff3fb4,0 0 44px #ff159d;
+    animation:glow 1.6s ease-in-out infinite alternate,flicker 2.2s infinite;
+    font-size:clamp(20px,4.8vw,34px)}
+  @keyframes glow{from{ text-shadow:0 0 6px #fff,0 0 14px #ff7bd8,0 0 26px #ff3fb4,0 0 44px #ff159d }
+                  to{   text-shadow:0 0 10px #fff,0 0 22px #ff9fe6,0 0 40px #ff46c0,0 0 64px #ff26a9 }}
+  @keyframes flicker{0%,18%,22%,25%,53%,57%,100%{opacity:1}19%,24%,56%{opacity:.5}}
+  .vacuum{width:clamp(28px,7vw,56px);height:auto;filter:drop-shadow(0 0 6px #67e8f9) drop-shadow(0 0 14px #22d3ee)}
+
+  /* Scoreboard */
+  .scoreboard{display:flex;gap:14px;justify-content:flex-end;flex-wrap:wrap}
+  .score{min-width:140px;padding:10px 14px;border-radius:12px;background:#202028;
+    font-family:'Press Start 2P',system-ui,sans-serif;font-size:14px;display:flex;gap:8px;justify-content:center;border:2px solid transparent}
+  .score.karim{border-color:var(--karim);box-shadow:var(--glowK)}
+  .score.julia{border-color:var(--julia);box-shadow:var(--glowJ)}
+  .leader{transform:scale(1.06)} .crown{font-size:16px}
+
+  /* Spieler-Badge */
+  .player-badge{display:inline-block;padding:6px 10px;border-radius:999px;border:2px solid currentColor;margin-left:8px;font-weight:700}
+  .player-badge.karim{color:var(--karim)} .player-badge.julia{color:var(--julia)}
+
+  /* Aufgabenliste */
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{background:#1a1b22;border-radius:10px;padding:10px;transition:background .25s}
+  .item.fresh{background:#0f2316;box-shadow:0 0 0 2px #14532d inset}
+  .top{display:grid;grid-template-columns:1fr auto auto auto auto;gap:10px;align-items:center}
+  .name{font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{border-radius:999px;padding:6px 10px;font-weight:700}
+  .ok{background:#122b18;color:#b7f7cf} .due{background:#352e11;color:#ffe8a3} .over{background:#331a1a;color:#ffc1c1}
+  .btn{background:#232632}
+  .bar{margin-top:8px;background:#2a2b32;height:8px;border-radius:999px;overflow:hidden}
+  .fill{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}
+  .owner{border:2px solid currentColor;background:transparent}
+  .owner.karim{color:var(--karim)} .owner.julia{color:var(--julia)}
+  .by-other{color:#ffd1dc}
+  .hint{margin-top:8px;font-size:13px;color:#ffd1dc}
+
+  @media (max-width:560px){.top{grid-template-columns:1fr auto auto}}
+</style>
+</head>
+<body>
+
+  <div class="title-wrap">
+    <svg class="vacuum" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M10 26c0-7 6-12 13-12h8c7 0 13 6 13 13v17" fill="none" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/><path d="M44 10v14" fill="none" stroke="#67e8f9" stroke-width="3" stroke-linecap="round"/><rect x="36" y="42" width="18" height="8" rx="2" ry="2" fill="#06b6d4" stroke="#67e8f9" stroke-width="2"/><ellipse cx="20" cy="44" rx="10" ry="7" fill="#0ea5e9" stroke="#7dd3fc" stroke-width="2"/><circle cx="20" cy="50" r="4" fill="#0ea5e9" stroke="#7dd3fc" stroke-width="2"/></svg>
+    <h1 class="pixel-title">Julia‘s &amp; Karim‘s Householdgame</h1>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <label>Wähle deinen Spieler:
+          <select id="player"><option>Karim</option><option>Julia</option></select>
+          <span id="playerBadge" class="player-badge karim">Karim</span>
+        </label>
+        <div class="row" style="margin-top:8px">
+          <button id="resetScores" class="btn">Punkte zurücksetzen</button>
+          <button id="reloadPresets" class="btn">Presets neu laden</button>
+        </div>
+      </div>
+      <div class="scoreboard" id="scoreboard"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <strong>Aufgaben</strong>
+    <div id="hint" class="hint">Spieler, der die Aufgabe eines anderen erledigt, bekommt <b>doppelte Punktzahl</b> (⚡).</div>
+    <div id="taskList" class="list" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <strong>Details & Sync</strong>
+    <div class="row" style="margin-top:8px">
+      <button id="exportBtn" class="btn">Export JSON</button>
+      <button id="importBtn" class="btn">Import JSON</button>
+      <button id="resetAll"  class="btn">Alles löschen</button>
+      <button id="togglePoints" class="btn">Punkte an/aus</button>
+    </div>
+    <textarea id="io" style="width:100%;height:90px;margin-top:8px;background:#0e0f13;border-radius:8px;color:#b6bdc9;border:0;padding:10px"></textarea>
+  </div>
+
+<script>
+const PRESET = [
+  {id:'staub', name:'Staubsaugen',         freqDays:7,   owner:'Karim'},
+  {id:'bad',   name:'Klo + Bad putzen',    freqDays:7,   owner:'Julia'},
+  {id:'muell', name:'Müll',                freqDays:7,   owner:'Karim'},
+  {id:'bett',  name:'Bettwäsche wechseln', freqDays:60,  owner:'Julia'},
+  {id:'rasen', name:'Rasen mähen',         freqDays:7,   owner:'Karim'},
+  {id:'entst', name:'Entstauben',          freqDays:14,  owner:'Julia'},
+  {id:'boden', name:'Boden wischen',       freqDays:30,  owner:'Karim'},
+  {id:'fenst', name:'Fenster putzen',      freqDays:120, owner:'Julia'}
+];
+
+const KEY='household.owners.v2';
+let state={ players:{Karim:0,Julia:0}, tasks:[] };
+let pointsEnabled=true;
+
+const $=id=>document.getElementById(id);
+const dayMs=86400000;
+const today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const fmtDate=d=>d?new Date(d).toLocaleDateString('de-AT'):'nie';
+const ownerClass=o=>o==='Karim'?'karim':'julia';
+const isToday=d=>{ if(!d) return false; const a=new Date(d); const t=today0(); return a.getFullYear()===t.getFullYear() && a.getMonth()===t.getMonth() && a.getDate()===t.getDate(); };
+
+function load(){
+  const raw=localStorage.getItem(KEY);
+  if(raw){ try{ state=JSON.parse(raw); }catch(e){} }
+  if(!state.tasks||!Array.isArray(state.tasks)||state.tasks.length===0){
+    state.tasks=PRESET.map(t=>({...t,lastDone:null,lastBy:null}));
+  }else{
+    const ids=new Set(state.tasks.map(t=>t.id));
+    PRESET.forEach(p=>{
+      if(!ids.has(p.id)) state.tasks.push({...p,lastDone:null,lastBy:null});
+      else{ const t=state.tasks.find(x=>x.id===p.id); t.owner=p.owner; t.freqDays=p.freqDays; t.name=p.name; }
+    });
+  }
+}
+function save(){ localStorage.setItem(KEY,JSON.stringify(state)); }
+
+function daysRemaining(lastDone,freq){
+  if(!lastDone) return -9999;
+  const last=new Date(lastDone); last.setHours(0,0,0,0);
+  const next=new Date(last.getTime()+freq*dayMs);
+  return Math.floor((next.getTime()-today0().getTime())/dayMs);
+}
+function clsByRem(rem){ if(rem>=3) return 'ok'; if(rem>=0) return 'due'; return 'over'; }
+function labelByRem(rem){
+  if(rem===-9999) return 'fällig (nie erledigt)';
+  if(rem<0) return `überfällig ${Math.abs(rem)} T`;
+  if(rem===0) return 'heute fällig';
+  return `in ${rem} T`;
+}
+function progressPct(lastDone,freq){
+  if(!lastDone) return 100;
+  const last=new Date(lastDone); last.setHours(0,0,0,0);
+  const passed=Math.max(0,(today0().getTime()-last.getTime())/dayMs);
+  return Math.min(100,Math.max(0,(passed/freq)*100));
+}
+
+function playDing(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type='square'; o.frequency.setValueAtTime(880, ctx.currentTime);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.25);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.25);
+  }catch(e){}
+}
+
+function render(){
+  const sb=$('scoreboard'); sb.innerHTML='';
+  const entries = Object.entries(state.players).sort((a,b)=>b[1]-a[1]);
+  const top = entries.length? entries[0][1]:0;
+  entries.forEach(([name,pts])=>{
+    const div=document.createElement('div');
+    div.className='score '+(name==='Karim'?'karim':'julia')+(pts===top?' leader':'');
+    div.innerHTML = `${name}: <b>${pts}</b> P ${pts===top?'<span class="crown">👑</span>':''}`;
+    sb.appendChild(div);
+  });
+
+  const cur=$('player').value;
+  const badge=$('playerBadge'); badge.textContent=cur; badge.className='player-badge '+(cur==='Karim'?'karim':'julia');
+
+  const list=$('taskList'); list.innerHTML='';
+  const tasks=[...state.tasks].sort((a,b)=>daysRemaining(a.lastDone,a.freqDays)-daysRemaining(b.lastDone,b.freqDays));
+
+  tasks.forEach(t=>{
+    const rem=daysRemaining(t.lastDone,t.freqDays);
+    const cls=clsByRem(rem);
+    const pct=progressPct(t.lastDone,t.freqDays);
+
+    const wrap=document.createElement('div'); wrap.className='item'+(isToday(t.lastDone)?' fresh':'');
+
+    const top=document.createElement('div'); top.className='top';
+    const byText = t.lastBy ? (t.lastBy!==t.owner ? `<span class="by-other">• von ${t.lastBy} ⚡</span>` : `• von ${t.lastBy}`) : '';
+    top.innerHTML=`
+      <div class="name">${t.name} <span class="pill owner ${ownerClass(t.owner)}">${t.owner}</span></div>
+      <div class="muted">${t.freqDays} Tage</div>
+      <div class="muted">zuletzt: ${fmtDate(t.lastDone)} ${byText}</div>
+      <div class="pill ${cls}">${labelByRem(rem)}</div>
+      <button class="btn">✓ Erledigt</button>
+    `;
+    top.querySelector('button').onclick=()=>markDone(t.id);
+
+    const bar=document.createElement('div'); bar.className='bar';
+    const fill=document.createElement('div'); fill.className='fill'; fill.style.width=`${pct}%`;
+    bar.appendChild(fill);
+
+    wrap.append(top,bar);
+    list.appendChild(wrap);
+  });
+}
+
+function markDone(id){
+  const t=state.tasks.find(x=>x.id===id); if(!t) return;
+  const who=$('player').value||'Karim';
+  t.lastDone=new Date().toISOString(); t.lastBy=who;
+
+  if(pointsEnabled){
+    const add = (who===t.owner) ? 1 : 2;
+    state.players[who]=(state.players[who]||0)+add;
+  }
+  save(); render(); playDing();
+}
+
+$('player').addEventListener('change', render);
+$('exportBtn').onclick=()=>$('io').value=JSON.stringify(state);
+$('importBtn').onclick=()=>{ try{ state=JSON.parse($('io').value||''); save(); render(); alert('Import ok'); }catch(e){ alert('Ungültige JSON'); } };
+$('resetAll').onclick=()=>{ if(!confirm('Alles löschen & auf Standard zurücksetzen?')) return;
+  state={ players:{Karim:0,Julia:0}, tasks:PRESET.map(t=>({...t,lastDone:null,lastBy:null})) }; save(); render(); };
+$('togglePoints').onclick=()=>{ pointsEnabled=!pointsEnabled; alert('Punkte '+(pointsEnabled?'an':'aus')); };
+$('resetScores').onclick=()=>{ state.players={Karim:0,Julia:0}; save(); render(); alert('Punkte zurückgesetzt'); };
+$('reloadPresets').onclick=()=>{ state.tasks=PRESET.map(t=>({...t,lastDone:null,lastBy:null})); save(); render(); };
+
+document.addEventListener('DOMContentLoaded',()=>{ load(); save(); render(); });
+</script>
 </body>
+</html>
