@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Julia & Karim's Householdgame</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Press Start 2P', system-ui, monospace;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(90deg, #ff00ff, #00c3ff);
+      color: #fff;
+      font-size: 20px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+    .scoreboard {
+      display: flex;
+      justify-content: space-around;
+      font-size: 22px;
+      margin: 15px;
+      padding: 15px;
+      border: 3px solid #00ffea;
+      background: #000;
+      box-shadow: 0 0 15px #00ffea;
+    }
+    .karim { color: #4fc3f7; }
+    .julia { color: #f48fb1; }
+    .task {
+      margin: 12px;
+      padding: 15px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background: #1c1c1c;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .owner {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #fff;
+    }
+    .owner.karim { background: #4fc3f7; }
+    .owner.julia { background: #f48fb1; }
+    .done {
+      background: #00ff88 !important;
+      color: #000 !important;
+      font-weight: bold;
+      animation: glow 1s infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 5px #00ff88; }
+      to { box-shadow: 0 0 20px #00ff88; }
+    }
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px 12px;
+      margin-left: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #333;
+      color: #fff;
+    }
+    .notice {
+      text-align: center;
+      margin: 10px;
+      color: #ff0;
+    }
+  </style>
+</head>
+<body>
+  <header>🏠 Julia & Karim's Householdgame</header>
+  <div class="scoreboard">
+    <div class="karim">Karim: <span id="score-karim">0</span> P</div>
+    <div class="julia">Julia: <span id="score-julia">0</span> P</div>
+  </div>
+
+  <div class="notice">⚡ Spieler, die Aufgaben des anderen übernehmen, bekommen <b>doppelte Punkte!</b></div>
+
+  <div id="tasks"></div>
+
+  <audio id="doneSound">
+    <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+  </audio>
+
+  <script>
+    const tasks = [
+      { name: "Klo + Bad putzen", owner: "julia" },
+      { name: "Müll rausbringen", owner: "karim" },
+      { name: "Bettwäsche wechseln", owner: "julia" },
+      { name: "Rasen mähen", owner: "karim" },
+      { name: "Entstauben", owner: "julia" },
+      { name: "Boden wischen", owner: "karim" },
+      { name: "Fenster putzen", owner: "julia" },
+      { name: "Staubsaugen", owner: "karim" }
+    ];
+
+    let scores = { karim: 0, julia: 0 };
+
+    const taskContainer = document.getElementById("tasks");
+    const sound = document.getElementById("doneSound");
+
+    function renderTasks() {
+      taskContainer.innerHTML = "";
+      tasks.forEach((task, i) => {
+        const div = document.createElement("div");
+        div.className = "task";
+        div.innerHTML = `
+          <span>${task.name} <span class="owner ${task.owner}">${task.owner.charAt(0).toUpperCase() + task.owner.slice(1)}</span></span>
+          <button onclick="completeTask(${i}, 'karim')">Karim erledigt</button>
+          <button onclick="completeTask(${i}, 'julia')">Julia erledigt</button>
+        `;
+        taskContainer.appendChild(div);
+      });
+    }
+
+    function completeTask(index, player) {
+      const task = tasks[index];
+      const taskDiv = taskContainer.children[index];
+      let points = 1;
+      if (task.owner !== player) {
+        points = 2; // doppelte Punkte
+      }
+      scores[player] += points;
+
+      document.getElementById(`score-${player}`).innerText = scores[player];
+      taskDiv.classList.add("done");
+      sound.play();
+    }
+
+    renderTasks();
+  </script>
+</body>
+</html>
