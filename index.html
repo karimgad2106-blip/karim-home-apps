@@ -60,6 +60,12 @@
   .hint{margin-top:8px;font-size:13px;color:#ffd1dc}
 
   @media (max-width:560px){.top{grid-template-columns:1fr auto auto}}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    background:#111827;color:#e5e7eb;padding:10px 14px;border-radius:10px;font:600 14px system-ui;opacity:0;
+    transition:opacity .25s, transform .25s; pointer-events:none; border:1px solid #374151}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
 </style>
 </head>
 <body>
@@ -96,11 +102,15 @@
     <div class="row" style="margin-top:8px">
       <button id="exportBtn" class="btn">Export JSON</button>
       <button id="importBtn" class="btn">Import JSON</button>
+      <button id="copyBtn"   class="btn">Kopieren</button>
+      <button id="clearBox"  class="btn">Feld leeren</button>
       <button id="resetAll"  class="btn">Alles löschen</button>
       <button id="togglePoints" class="btn">Punkte an/aus</button>
     </div>
-    <textarea id="io" style="width:100%;height:90px;margin-top:8px;background:#0e0f13;border-radius:8px;color:#b6bdc9;border:0;padding:10px"></textarea>
+    <textarea id="io" placeholder="Hier erscheint der Export. Zum Import die JSON hier einfügen und 'Import JSON' drücken." style="width:100%;height:90px;margin-top:8px;background:#0e0f13;border-radius:8px;color:#b6bdc9;border:0;padding:10px"></textarea>
   </div>
+
+  <div id="toast" class="toast">Kopiert</div>
 
 <script>
 const PRESET = [
@@ -172,6 +182,11 @@ function playDing(){
   }catch(e){}
 }
 
+function toast(msg){
+  const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(window._t); window._t=setTimeout(()=>el.classList.remove('show'),1200);
+}
+
 function render(){
   const sb=$('scoreboard'); sb.innerHTML='';
   const entries = Object.entries(state.players).sort((a,b)=>b[1]-a[1]);
@@ -228,15 +243,44 @@ function markDone(id){
   save(); render(); playDing();
 }
 
+/* Buttons */
 $('player').addEventListener('change', render);
-$('exportBtn').onclick=()=>$('io').value=JSON.stringify(state);
-$('importBtn').onclick=()=>{ try{ state=JSON.parse($('io').value||''); save(); render(); alert('Import ok'); }catch(e){ alert('Ungültige JSON'); } };
-$('resetAll').onclick=()=>{ if(!confirm('Alles löschen & auf Standard zurücksetzen?')) return;
-  state={ players:{Karim:0,Julia:0}, tasks:PRESET.map(t=>({...t,lastDone:null,lastBy:null})) }; save(); render(); };
-$('togglePoints').onclick=()=>{ pointsEnabled=!pointsEnabled; alert('Punkte '+(pointsEnabled?'an':'aus')); };
-$('resetScores').onclick=()=>{ state.players={Karim:0,Julia:0}; save(); render(); alert('Punkte zurückgesetzt'); };
-$('reloadPresets').onclick=()=>{ state.tasks=PRESET.map(t=>({...t,lastDone:null,lastBy:null})); save(); render(); };
 
+$('exportBtn').onclick=()=>{
+  $('io').value = JSON.stringify(state);
+  toast('Export erstellt');
+};
+
+$('importBtn').onclick=()=>{
+  try{
+    state = JSON.parse($('io').value||'');
+    save(); render(); toast('Import ok');
+  }catch(e){ alert('Ungültige JSON'); }
+};
+
+$('copyBtn').onclick=async()=>{
+  try{
+    const txt=$('io').value;
+    if(!txt){ toast('Nichts zu kopieren'); return; }
+    if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(txt); }
+    else{ // Fallback
+      const ta=$('io'); ta.select(); document.execCommand('copy');
+    }
+    toast('Kopiert');
+  }catch(e){ alert('Kopieren fehlgeschlagen'); }
+};
+
+$('clearBox').onclick=()=>{ $('io').value=''; };
+
+$('resetAll').onclick=()=>{ if(!confirm('Alles löschen & auf Standard zurücksetzen?')) return;
+  state={ players:{Karim:0,Julia:0}, tasks:PRESET.map(t=>({...t,lastDone:null,lastBy:null})) }; save(); render(); toast('Zurückgesetzt'); };
+
+$('togglePoints').onclick=()=>{ pointsEnabled=!pointsEnabled; toast('Punkte '+(pointsEnabled?'an':'aus')); };
+
+$('resetScores').onclick=()=>{ state.players={Karim:0,Julia:0}; save(); render(); toast('Punkte zurückgesetzt'); };
+$('reloadPresets').onclick=()=>{ state.tasks=PRESET.map(t=>({...t,lastDone:null,lastBy:null})); save(); render(); toast('Presets geladen'); };
+
+/* Init */
 document.addEventListener('DOMContentLoaded',()=>{ load(); save(); render(); });
 </script>
 </body>
